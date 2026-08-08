@@ -1,255 +1,269 @@
-# Cloud-Native Retail Data Engineering Platform
+# 🛒 Cloud-Native Retail Data Engineering Platform
 
-An end-to-end retail data engineering pipeline that extracts, validates, transforms, loads, and analyzes retail sales data.
+<p align="center">
+  <strong>End-to-end ETL pipeline for retail sales data with data quality validation, SQL analytics, automated testing, and CI/CD.</strong>
+</p>
 
-This project demonstrates practical **ETL, data quality validation, SQL analytics, logging, automated testing, and pipeline orchestration**. It is designed as a foundation for building a cloud-native data engineering platform.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12-blue?logo=python" />
+  <img src="https://img.shields.io/badge/Pandas-Data%20Processing-150458?logo=pandas" />
+  <img src="https://img.shields.io/badge/SQLAlchemy-Database-red" />
+  <img src="https://img.shields.io/badge/SQLite-Database-003B57?logo=sqlite" />
+  <img src="https://img.shields.io/badge/Pytest-Testing-0A9EDC?logo=pytest" />
+  <img src="https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions" />
+</p>
 
 ---
 
-## Architecture
+## 📌 What is this project?
+
+This project is a **retail data engineering pipeline** that takes raw sales data and turns it into clean, validated, and analytics-ready data.
+
+The pipeline performs:
+
+**Extract → Validate → Transform → Load → Analyze**
+
+It demonstrates practical concepts used in real-world data engineering projects, including:
+
+- ETL pipeline development
+- Data quality checks
+- Data transformation
+- Relational database loading
+- SQL analytics
+- Automated testing
+- Logging
+- Git/GitHub
+- GitHub Actions CI
+
+---
+
+# 🏗️ Architecture
 
 ```text
-                    Retail Sales CSV
-                           |
-                           v
-                    +-------------+
-                    |   Extract   |
-                    |   Pandas    |
-                    +------+------+
-                           |
-                           v
-                    +-------------+
-                    | Data Quality|
-                    |   Checks    |
-                    +------+------+
-                           |
-                         PASS
-                           |
-                           v
-                    +-------------+
-                    | Transform   |
-                    |   Pandas    |
-                    +------+------+
-                           |
-                           v
-                 Processed Retail Data
-                           |
-                           v
-                    +-------------+
-                    |    Load     |
-                    |   SQLite    |
-                    +------+------+
-                           |
-                           v
-                    +-------------+
-                    |    SQL      |
-                    |  Analytics  |
-                    +-------------+
-```
+                ┌─────────────────────┐
+                │  Retail Sales CSV   │
+                │   Raw Data Source   │
+                └──────────┬──────────┘
+                           │
+                           ▼
+                ┌─────────────────────┐
+                │      EXTRACT        │
+                │       Pandas        │
+                └──────────┬──────────┘
+                           │
+                           ▼
+                ┌─────────────────────┐
+                │   DATA QUALITY      │
+                │       CHECKS        │
+                └──────────┬──────────┘
+                           │
+                      PASS │
+                           ▼
+                ┌─────────────────────┐
+                │     TRANSFORM       │
+                │  Clean + Calculate  │
+                └──────────┬──────────┘
+                           │
+                           ▼
+                ┌─────────────────────┐
+                │        LOAD         │
+                │ SQLite + SQLAlchemy │
+                └──────────┬──────────┘
+                           │
+                           ▼
+                ┌─────────────────────┐
+                │     ANALYTICS       │
+                │        SQL          │
+                └─────────────────────┘
+✨ Key Features
+Feature	Description
+📥 Data Extraction	Reads retail sales CSV using Pandas
+🔍 Data Quality	Validates columns, missing values, duplicates, quantity, price and dates
+🔄 Transformation	Cleans data and calculates total order value
+💾 Database Loading	Loads transformed data into SQLite using SQLAlchemy
+📊 SQL Analytics	Calculates revenue, quantity, AOV and category/region performance
+🧪 Automated Testing	Pytest tests for transformation logic
+📝 Logging	Records pipeline execution and failures
+🤖 CI/CD	GitHub Actions automatically runs tests
+📦 Dependency Management	Uses requirements.txt
+🔄 ETL Pipeline
+1️⃣ Extract
 
----
+Raw data is stored in:
 
-## Features
-
-* CSV-based retail data ingestion
-* Data extraction using Pandas
-* Data quality validation
-* Missing-value detection
-* Duplicate order detection
-* Quantity and price validation
-* Date validation
-* Sales/revenue calculation
-* SQLite database loading
-* SQL-based business analytics
-* Pipeline logging
-* Automated unit tests
-* Single-command pipeline execution
-
----
-
-## Technology Stack
-
-| Technology | Purpose                            |
-| ---------- | ---------------------------------- |
-| Python     | ETL and pipeline development       |
-| Pandas     | Data processing and transformation |
-| SQL        | Data analysis                      |
-| SQLite     | Local data storage                 |
-| SQLAlchemy | Database connectivity              |
-| Pytest     | Automated testing                  |
-| Git/GitHub | Version control                    |
-
----
-
-## Project Structure
-
-```text
-cloud-native-retail-data-engineering/
-|
-+-- data/
-|   +-- raw/
-|       +-- retail_sales.csv
-|
-+-- sql/
-|   +-- analytics.sql
-|
-+-- src/
-|   +-- __init__.py
-|   +-- extract.py
-|   +-- data_quality.py
-|   +-- transform.py
-|   +-- load.py
-|   +-- logger.py
-|   +-- pipeline.py
-|   +-- run_analytics.py
-|
-+-- tests/
-|   +-- __init__.py
-|   +-- test_transform.py
-|
-+-- logs/
-+-- README.md
-+-- .gitignore
-```
-
----
-
-## ETL Workflow
-
-### 1. Extract
-
-The pipeline reads raw retail sales data from:
-
-```text
 data/raw/retail_sales.csv
-```
 
-Pandas loads the CSV into a DataFrame.
+The pipeline loads the data using Pandas.
 
-### 2. Data Quality
+Example:
 
-The pipeline validates:
+Rows: 10
+Columns: 9
+2️⃣ Data Quality Validation
 
-* Required columns
-* Missing values
-* Duplicate order IDs
-* Positive quantities
-* Positive unit prices
-* Valid order dates
+Before processing the data, the pipeline performs validation checks.
 
-The pipeline stops if validation fails.
+Current checks
+✓ Required columns
+✓ Missing values
+✓ Duplicate order IDs
+✓ Quantity values
+✓ Unit prices
+✓ Order dates
 
-### 3. Transform
+Example:
+
+DATA QUALITY CHECK: PASSED
+
+If validation fails, the pipeline stops instead of processing invalid data.
+
+3️⃣ Transform
 
 The transformation stage:
 
-* Converts order dates to datetime
-* Removes duplicate orders
-* Sorts records by order date
-* Calculates total order value
-
-```text
+Removes duplicate orders
+Converts order dates
+Sorts records
+Calculates total order value
+Business calculation
 total_amount = quantity × unit_price
-```
 
-### 4. Load
+Example:
 
-The transformed data is loaded into a SQLite database:
+Quantity   = 2
+Unit Price = ₹45,000
 
-```text
+Total Amount = ₹90,000
+4️⃣ Load
+
+The transformed data is loaded into:
+
+SQLite Database
+      ↓
 data/retail_sales.db
-```
+      ↓
+retail_sales table
 
-Table:
+SQLAlchemy is used for database connectivity.
 
-```text
-retail_sales
-```
+5️⃣ Analyze
 
-### 5. Analytics
+SQL queries generate business insights such as:
 
-SQL queries calculate:
+💰 Total revenue
+📦 Total quantity sold
+🧾 Average order value
+🏷️ Revenue by category
+🌍 Revenue by region
+🥇 Highest-value orders
+📊 Sample Results
 
-* Total revenue
-* Revenue by category
-* Revenue by region
-* Total quantity sold
-* Average order value
-* Highest-value orders
+The current sample dataset contains 10 orders.
 
----
+Metric	Result
+🧾 Orders processed	10
+📦 Quantity sold	27
+💰 Total revenue	₹372,850
+🛍️ Average order value	₹37,285
+🥇 Top category	Electronics
+📍 Top region	South
+💰 Revenue by Category
+Category	Revenue
+🔌 Electronics	₹330,000
+🛋️ Furniture	₹29,000
+👕 Clothing	₹10,800
+🛒 Groceries	₹3,050
 
-## Sample Results
+Electronics generates the highest revenue.
 
-Using the sample dataset:
+🌍 Revenue by Region
+Region	Revenue
+🟢 South	₹292,200
+🔵 West	₹58,250
+🟡 East	₹17,000
+🔴 North	₹5,400
 
-| Metric              |      Result |
-| ------------------- | ----------: |
-| Orders processed    |          10 |
-| Total quantity sold |          27 |
-| Total revenue       |    ₹372,850 |
-| Average order value |     ₹37,285 |
-| Top category        | Electronics |
-| Top region          |       South |
+South is the highest-performing region.
 
-### Revenue by Category
+🧰 Tech Stack
+Python 3.12
+│
+├── Pandas
+├── SQLAlchemy
+├── SQLite
+├── SQL
+├── Pytest
+├── Git
+├── GitHub
+└── GitHub Actions
+Technology	Used For
+🐍 Python	Pipeline development
+🐼 Pandas	Data processing
+🔗 SQLAlchemy	Database connectivity
+🗄️ SQLite	Data storage
+🧮 SQL	Analytics
+🧪 Pytest	Testing
+🌐 GitHub	Version control
+⚙️ GitHub Actions	Continuous integration
+📁 Project Structure
+cloud-native-retail-data-engineering/
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── data/
+│   └── raw/
+│       └── retail_sales.csv
+│
+├── sql/
+│   └── analytics.sql
+│
+├── src/
+│   ├── __init__.py
+│   ├── extract.py
+│   ├── data_quality.py
+│   ├── transform.py
+│   ├── load.py
+│   ├── logger.py
+│   ├── pipeline.py
+│   └── run_analytics.py
+│
+├── tests/
+│   ├── __init__.py
+│   └── test_transform.py
+│
+├── requirements.txt
+├── .gitignore
+└── README.md
 
-| Category    |  Revenue |
-| ----------- | -------: |
-| Electronics | ₹330,000 |
-| Furniture   |  ₹29,000 |
-| Clothing    |  ₹10,800 |
-| Groceries   |   ₹3,050 |
+Generated files such as:
 
-### Revenue by Region
+.venv/
+__pycache__/
+.pytest_cache/
+logs/
+data/processed/
+data/*.db
 
-| Region |  Revenue |
-| ------ | -------: |
-| South  | ₹292,200 |
-| West   |  ₹58,250 |
-| East   |  ₹17,000 |
-| North  |   ₹5,400 |
+are excluded from Git using .gitignore.
 
----
-
-## Running the Project
-
-### 1. Clone the repository
-
-```bash
+🚀 Run the Project
+1. Clone
 git clone https://github.com/vijayshree1603/cloud-native-retail-data-engineering.git
 cd cloud-native-retail-data-engineering
-```
-
-### 2. Create a virtual environment
-
-Windows:
-
-```bash
+2. Create virtual environment
 python -m venv .venv
-```
-
-Activate:
-
-```bash
+3. Activate
+Windows
 .venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
-pip install pandas sqlalchemy pytest
-```
-
-### 4. Run the complete pipeline
-
-```bash
-python src/pipeline.py
-```
+4. Install dependencies
+pip install -r requirements.txt
+5. Run the pipeline
+python -m src.pipeline
 
 The pipeline executes:
 
-```text
 Extract
    ↓
 Data Quality
@@ -259,111 +273,119 @@ Transform
 Load
    ↓
 SQL Analytics
-```
-
----
-
-## Testing
+🧪 Testing
 
 Run:
 
-```bash
-pytest
-```
+pytest -v
 
 Current tests verify:
 
-* Total amount calculation
-* Duplicate order removal
+✓ Total amount calculation
+✓ Duplicate order removal
 
-Expected result:
+Expected:
 
-```text
 2 passed
-```
+🤖 Continuous Integration
 
----
+This project uses GitHub Actions to automatically test the project.
 
-## Logging
+Whenever code is pushed to main or a pull request is created:
 
-Pipeline execution is logged to:
+        Git Push
+           │
+           ▼
+    GitHub Actions
+           │
+           ▼
+     Python 3.12
+           │
+           ▼
+Install requirements.txt
+           │
+           ▼
+       Run Pytest
+           │
+           ▼
+      ✅ CI Passed
 
-```text
+Workflow:
+
+.github/workflows/ci.yml
+📝 Logging
+
+Pipeline logs are written to:
+
 logs/pipeline.log
-```
 
-The log records:
+The logging system records:
 
-* Pipeline start
-* Individual pipeline stages
-* Successful completion
-* Pipeline failures
+Pipeline execution
+Pipeline stages
+Successful completion
+Errors/failures
 
----
+Logs are intentionally excluded from Git.
 
-## Future Cloud-Native Architecture
+☁️ Future Cloud Architecture
 
-The current implementation provides the local foundation for a cloud-native data platform.
+The current project runs locally using:
 
-Planned architecture:
+CSV → Python → SQLite → SQL
 
-```text
-Retail Data Sources
-        |
-        v
-Cloud Object Storage
-        |
-        v
-Data Lake
-        |
-        v
-Cloud ETL / Data Processing
-        |
-        v
-Cloud Data Warehouse
-        |
-        +----------------+
-        |                |
-        v                v
-   SQL Analytics     Power BI
-```
+The next stage is to migrate the architecture toward cloud infrastructure.
 
-Planned improvements include:
+                 Retail Data Sources
+                         │
+                         ▼
+                ☁️ Cloud Object Storage
+                         │
+                         ▼
+                    Data Lake
+                         │
+                         ▼
+                Cloud ETL Processing
+                         │
+                         ▼
+               Cloud Data Warehouse
+                    │          │
+                    ▼          ▼
+               SQL Analytics  Power BI
+Planned improvements
+☁️ AWS S3 / Azure Data Lake
+⚙️ AWS Glue / Azure Data Factory
+🗄️ Cloud Data Warehouse
+🔄 Apache Airflow
+🐳 Docker
+📊 Power BI dashboard
+📈 Pipeline monitoring
+🔐 Cloud security
+🚀 Automated deployment
 
-* AWS S3 / Azure Data Lake
-* Cloud ETL services
-* Cloud data warehouse
-* Apache Airflow
-* Docker
-* CI/CD
-* Data pipeline monitoring
-* Power BI dashboards
+These are future enhancements. The current implementation is a local Python-based data engineering pipeline.
 
----
+🎯 Learning Outcomes
 
-## Learning Outcomes
+Through this project, I gained practical experience in:
 
-This project demonstrates practical experience with:
+Building ETL pipelines
+Data cleaning and validation
+Pandas data processing
+SQL analytics
+Relational databases
+SQLAlchemy
+Automated testing
+Pipeline logging
+Git/GitHub
+GitHub Actions
+Cloud-native architecture concepts
+👩‍💻 Author
+S Vijayshree
 
-* ETL pipeline development
-* Data cleaning
-* Data validation
-* Python data engineering
-* SQL analytics
-* Relational databases
-* Pipeline automation
-* Logging
-* Unit testing
-* Git and GitHub
-* Cloud-native data architecture concepts
+B.E. Information Science & Engineering
 
----
-
-## Author
-
-**S Vijayshree**
-
-
-
-GitHub:
-https://github.com/vijayshree1603
+🔗 Connect
+GitHub: https://github.com/vijayshree1603
+LinkedIn: https://www.linkedin.com/in/vijayshree-selva-214092297/
+<p align="center"> ⭐ If you found this project useful, consider giving it a star! </p> ```
