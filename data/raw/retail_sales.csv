@@ -1,0 +1,11 @@
+order_id,order_date,customer_id,product_id,category,quantity,unit_price,region,payment_method
+1001,2026-01-05,C001,P101,Electronics,2,45000,South,UPI
+1002,2026-01-06,C002,P102,Clothing,3,1200,North,Credit Card
+1003,2026-01-07,C003,P103,Groceries,5,250,West,UPI
+1004,2026-01-08,C004,P104,Electronics,1,65000,South,Debit Card
+1005,2026-01-09,C005,P105,Furniture,2,8500,East,Credit Card
+1006,2026-01-10,C006,P101,Electronics,1,45000,West,UPI
+1007,2026-01-11,C007,P106,Clothing,4,1800,South,Cash
+1008,2026-01-12,C008,P103,Groceries,6,300,North,UPI
+1009,2026-01-13,C009,P107,Furniture,1,12000,West,Credit Card
+1010,2026-01-14,C010,P104,Electronics,2,65000,South,UPI

@@ -1,32 +1,31 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-
 # Virtual environment
 .venv/
-venv/
-env/
 
-# Environment variables / secrets
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Pytest cache
+.pytest_cache/
+
+# Logs
+logs/
+*.log
+
+# Local database
+*.db
+
+# Environment variables
 .env
 .env.*
 
-# Logs
-logs/*
-!logs/.gitkeep
+# Generated processed data
+data/processed/
 
-# Data files
-data/raw/*
-data/processed/*
-
-# IDE
+# IDE files
 .vscode/
 .idea/
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
-
-# Jupyter
-.ipynb_checkpoints/
