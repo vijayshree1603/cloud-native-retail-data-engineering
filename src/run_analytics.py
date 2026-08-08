@@ -1,101 +1,47 @@
+"""Analytics queries for the loaded retail sales table."""
+
 import sqlite3
 
-DATABASE_PATH = "data/retail_sales.db"
+from src.config import DATABASE_PATH
+from src.logger import get_logger
 
 
 def run_query(connection, title, query):
-    print(f"\n{'=' * 50}")
-    print(title)
-    print('=' * 50)
-
+    """Print and return results for one named SQL query."""
+    print(f"\n{'=' * 50}\n{title}\n{'=' * 50}")
     cursor = connection.execute(query)
-
-    columns = [description[0] for description in cursor.description]
-    print(columns)
-
-    for row in cursor.fetchall():
+    print([description[0] for description in cursor.description])
+    rows = cursor.fetchall()
+    for row in rows:
         print(row)
+    return rows
 
 
-def main():
-    connection = sqlite3.connect(DATABASE_PATH)
+def run_analytics(database_path=DATABASE_PATH):
+    """Run the standard analytics queries and return their result rows."""
+    connection = sqlite3.connect(str(database_path))
+    try:
+        table_exists = connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'retail_sales'"
+        ).fetchone()
+        if not table_exists:
+            raise RuntimeError("retail_sales table does not exist. Run the load step first.")
 
-    # 1. Total Revenue
-    run_query(
-        connection,
-        "1. Total Revenue",
-        """
-        SELECT SUM(total_amount) AS total_revenue
-        FROM retail_sales;
-        """
-    )
+        queries = {
+            "total_revenue": ("1. Total Revenue", "SELECT SUM(total_amount) AS total_revenue FROM retail_sales"),
+            "revenue_by_category": ("2. Revenue by Category", "SELECT category, SUM(total_amount) AS revenue FROM retail_sales GROUP BY category ORDER BY revenue DESC"),
+            "revenue_by_region": ("3. Revenue by Region", "SELECT region, SUM(total_amount) AS revenue FROM retail_sales GROUP BY region ORDER BY revenue DESC"),
+            "total_quantity": ("4. Total Quantity Sold", "SELECT SUM(quantity) AS total_quantity FROM retail_sales"),
+            "average_order_value": ("5. Average Order Value", "SELECT AVG(total_amount) AS average_order_value FROM retail_sales"),
+            "highest_value_orders": ("6. Highest Value Orders", "SELECT order_id, customer_id, category, total_amount FROM retail_sales ORDER BY total_amount DESC LIMIT 5"),
+        }
+        results = {name: run_query(connection, title, query) for name, (title, query) in queries.items()}
+    finally:
+        connection.close()
 
-    # 2. Revenue by Category
-    run_query(
-        connection,
-        "2. Revenue by Category",
-        """
-        SELECT
-            category,
-            SUM(total_amount) AS revenue
-        FROM retail_sales
-        GROUP BY category
-        ORDER BY revenue DESC;
-        """
-    )
-
-    # 3. Revenue by Region
-    run_query(
-        connection,
-        "3. Revenue by Region",
-        """
-        SELECT
-            region,
-            SUM(total_amount) AS revenue
-        FROM retail_sales
-        GROUP BY region
-        ORDER BY revenue DESC;
-        """
-    )
-
-    # 4. Total Quantity Sold
-    run_query(
-        connection,
-        "4. Total Quantity Sold",
-        """
-        SELECT SUM(quantity) AS total_quantity
-        FROM retail_sales;
-        """
-    )
-
-    # 5. Average Order Value
-    run_query(
-        connection,
-        "5. Average Order Value",
-        """
-        SELECT AVG(total_amount) AS average_order_value
-        FROM retail_sales;
-        """
-    )
-
-    # 6. Highest Value Orders
-    run_query(
-        connection,
-        "6. Highest Value Orders",
-        """
-        SELECT
-            order_id,
-            customer_id,
-            category,
-            total_amount
-        FROM retail_sales
-        ORDER BY total_amount DESC
-        LIMIT 5;
-        """
-    )
-
-    connection.close()
+    get_logger().info("Completed analytics against %s", database_path)
+    return results
 
 
 if __name__ == "__main__":
-    main()
+    run_analytics()

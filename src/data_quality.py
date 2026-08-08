@@ -1,117 +1,58 @@
+"""Data quality checks for retail sales data."""
+
 import pandas as pd
 
+from src.config import RAW_DATA_PATH
+from src.logger import get_logger
+
 REQUIRED_COLUMNS = [
-    "order_id",
-    "order_date",
-    "customer_id",
-    "product_id",
-    "category",
-    "quantity",
-    "unit_price",
-    "region",
-    "payment_method"
+    "order_id", "order_date", "customer_id", "product_id", "category",
+    "quantity", "unit_price", "region", "payment_method",
 ]
 
 
-def validate_data(df):
-    """Run data quality checks on retail sales data."""
-
-    print("\n" + "=" * 60)
-    print("DATA QUALITY CHECKS")
-    print("=" * 60)
-
+def validate_data(dataframe):
+    """Return ``True`` only when the dataset meets the required quality rules."""
+    logger = get_logger()
     errors = []
-
-    # Check required columns
-    missing_columns = [
-        column for column in REQUIRED_COLUMNS
-        if column not in df.columns
-    ]
-
+    missing_columns = [column for column in REQUIRED_COLUMNS if column not in dataframe.columns]
     if missing_columns:
-        errors.append(f"Missing columns: {missing_columns}")
-        print(f"✗ Required columns: FAIL - {missing_columns}")
+        logger.error("Data quality failure: missing columns: %s", missing_columns)
+        print("Data quality check: FAILED")
         return False
 
-    print("✓ Required columns: PASS")
+    missing_values = dataframe[REQUIRED_COLUMNS].isna().sum().sum()
+    if missing_values:
+        errors.append(f"missing values: {missing_values}")
 
-    # Check missing values
-    missing_values = df[REQUIRED_COLUMNS].isnull().sum().sum()
+    duplicate_orders = dataframe["order_id"].duplicated().sum()
+    if duplicate_orders:
+        errors.append(f"duplicate order IDs: {duplicate_orders}")
 
-    if missing_values > 0:
-        errors.append(f"Missing values found: {missing_values}")
-        print(f"✗ Missing values: FAIL - {missing_values}")
-    else:
-        print("✓ Missing values: PASS")
+    quantities = pd.to_numeric(dataframe["quantity"], errors="coerce")
+    invalid_quantity = (quantities.isna() | (quantities <= 0)).sum()
+    if invalid_quantity:
+        errors.append(f"invalid quantities: {invalid_quantity}")
 
-    # Check duplicate order IDs
-    duplicate_orders = df["order_id"].duplicated().sum()
+    prices = pd.to_numeric(dataframe["unit_price"], errors="coerce")
+    invalid_prices = (prices.isna() | (prices <= 0)).sum()
+    if invalid_prices:
+        errors.append(f"invalid unit prices: {invalid_prices}")
 
-    if duplicate_orders > 0:
-        errors.append(
-            f"Duplicate order IDs found: {duplicate_orders}"
-        )
-        print(
-            f"✗ Duplicate order IDs: FAIL - {duplicate_orders}"
-        )
-    else:
-        print("✓ Duplicate order IDs: PASS")
+    invalid_dates = pd.to_datetime(dataframe["order_date"], errors="coerce").isna().sum()
+    if invalid_dates:
+        errors.append(f"invalid order dates: {invalid_dates}")
 
-    # Check quantity
-    invalid_quantity = (df["quantity"] <= 0).sum()
-
-    if invalid_quantity > 0:
-        errors.append(
-            f"Invalid quantities found: {invalid_quantity}"
-        )
-        print(
-            f"✗ Quantity values: FAIL - {invalid_quantity}"
-        )
-    else:
-        print("✓ Quantity values: PASS")
-
-    # Check unit price
-    invalid_prices = (df["unit_price"] <= 0).sum()
-
-    if invalid_prices > 0:
-        errors.append(
-            f"Invalid unit prices found: {invalid_prices}"
-        )
-        print(
-            f"✗ Unit prices: FAIL - {invalid_prices}"
-        )
-    else:
-        print("✓ Unit prices: PASS")
-
-    # Check dates
-    invalid_dates = pd.to_datetime(
-        df["order_date"],
-        errors="coerce"
-    ).isna().sum()
-
-    if invalid_dates > 0:
-        errors.append(
-            f"Invalid dates found: {invalid_dates}"
-        )
-        print(
-            f"✗ Order dates: FAIL - {invalid_dates}"
-        )
-    else:
-        print("✓ Order dates: PASS")
-
-    # Final result
     if errors:
-        print("\nDATA QUALITY CHECK: FAILED")
-
         for error in errors:
-            print(f"✗ {error}")
-
+            logger.error("Data quality failure: %s", error)
+        print("Data quality check: FAILED")
         return False
 
-    print("\nDATA QUALITY CHECK: PASSED")
+    logger.info("Data quality check passed for %s rows", len(dataframe))
+    print("Data quality check: PASSED")
     return True
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("data/raw/retail_sales.csv")
-    validate_data(df)
+    raise SystemExit(0 if validate_data(pd.read_csv(RAW_DATA_PATH)) else 1)

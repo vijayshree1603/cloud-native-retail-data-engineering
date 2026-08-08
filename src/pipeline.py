@@ -1,56 +1,36 @@
-import subprocess
+"""Run the extract, validate, transform, load, and analytics workflow."""
+
 import sys
 
-from src.logger import get_logger
+from src.data_quality import validate_data
 from src.extract import extract_data
-from src.transform import transform_data
 from src.load import load_data
-
-logger = get_logger()
-
-
-def run_step(script):
-    """Run a pipeline step and log its status."""
-
-    print(f"\n{'=' * 60}")
-    print(f"Running: {script}")
-    print("=" * 60)
-
-    logger.info(f"Starting step: {script}")
-
-    result = subprocess.run(
-        [sys.executable, script],
-        check=False
-    )
-
-    if result.returncode != 0:
-        logger.error(f"Step failed: {script}")
-        print(f"\nPipeline failed at: {script}")
-        sys.exit(result.returncode)
-
-    logger.info(f"Step completed: {script}")
-    print(f"\nCompleted: {script}")
+from src.logger import get_logger
+from src.run_analytics import run_analytics
+from src.transform import save_transformed_data, transform_data
 
 
 def main():
-    print("\n" + "=" * 60)
-    print("RETAIL DATA ENGINEERING PIPELINE")
-    print("=" * 60)
-
+    """Execute the complete ETL flow; return a shell-compatible status code."""
+    logger = get_logger()
     logger.info("Pipeline started")
-
-    run_step("src/extract.py")
-    run_step("src/data_quality.py")
-    run_step("src/transform.py")
-    run_step("src/load.py")
-    run_step("src/run_analytics.py")
+    try:
+        raw_data = extract_data()
+        if not validate_data(raw_data):
+            raise ValueError("Data quality validation failed; pipeline stopped before transformation.")
+        transformed_data = transform_data(raw_data)
+        save_transformed_data(transformed_data)
+        load_data(transformed_data)
+        run_analytics()
+    except Exception as error:
+        logger.exception("Pipeline failed: %s", error)
+        print(f"Pipeline failed: {error}", file=sys.stderr)
+        return 1
 
     logger.info("Pipeline completed successfully")
-
-    print("\n" + "=" * 60)
-    print("PIPELINE COMPLETED SUCCESSFULLY!")
-    print("=" * 60)
+    print("Pipeline completed successfully.")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

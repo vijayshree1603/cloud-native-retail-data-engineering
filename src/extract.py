@@ -1,19 +1,23 @@
+"""Data extraction for the retail sales pipeline."""
+
 import pandas as pd
 
-RAW_DATA_PATH = "data/raw/retail_sales.csv"
+from src.config import RAW_DATA_PATH
+from src.logger import get_logger
 
 
-def extract_data():
-    """Extract retail sales data from the raw CSV file."""
-    df = pd.read_csv(RAW_DATA_PATH)
+def extract_data(path=RAW_DATA_PATH):
+    """Read and return retail sales data from a CSV file."""
+    path = str(path)
+    try:
+        dataframe = pd.read_csv(path)
+    except (FileNotFoundError, pd.errors.ParserError, UnicodeDecodeError) as error:
+        get_logger().exception("Extraction failed for %s", path)
+        raise RuntimeError(f"Unable to read raw data from {path}: {error}") from error
 
-    print("Data extracted successfully!")
-    print(f"Rows: {len(df)}")
-    print(f"Columns: {len(df.columns)}")
-    print("\nFirst 5 rows:")
-    print(df.head())
-
-    return df
+    get_logger().info("Extracted %s rows and %s columns from %s", len(dataframe), len(dataframe.columns), path)
+    print(f"Extracted {len(dataframe)} rows and {len(dataframe.columns)} columns from {path}")
+    return dataframe
 
 
 if __name__ == "__main__":

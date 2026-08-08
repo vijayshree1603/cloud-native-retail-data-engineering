@@ -1,47 +1,35 @@
+"""Transformation and persistence of validated retail sales data."""
+
 import pandas as pd
 
-RAW_DATA_PATH = "data/raw/retail_sales.csv"
-PROCESSED_DATA_PATH = "data/processed/retail_sales_transformed.csv"
+from src.config import PROCESSED_DATA_PATH, RAW_DATA_PATH
+from src.logger import get_logger
 
 
-def transform_data(df):
-    """Clean and transform retail sales data."""
+def transform_data(dataframe):
+    """Return cleaned data with parsed dates and calculated order totals."""
+    dataframe = dataframe.copy()
+    dataframe["order_date"] = pd.to_datetime(dataframe["order_date"])
+    dataframe["total_amount"] = dataframe["quantity"] * dataframe["unit_price"]
+    return dataframe.drop_duplicates(subset=["order_id"]).sort_values("order_date")
 
-    # Convert order_date to datetime
-    df["order_date"] = pd.to_datetime(df["order_date"])
 
-    # Calculate total sales for each order
-    df["total_amount"] = df["quantity"] * df["unit_price"]
-
-    # Remove duplicate orders
-    df = df.drop_duplicates(subset=["order_id"])
-
-    # Sort by order date
-    df = df.sort_values("order_date")
-
-    return df
+def save_transformed_data(dataframe, path=PROCESSED_DATA_PATH):
+    """Write transformed data to CSV, creating its output directory if needed."""
+    path = path if hasattr(path, "parent") else pd.io.common.stringify_path(path)
+    from pathlib import Path
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    dataframe.to_csv(path, index=False)
+    get_logger().info("Saved %s transformed rows to %s", len(dataframe), path)
+    return path
 
 
 def main():
-    # Extract
-    df = pd.read_csv(RAW_DATA_PATH)
-
-    print("Raw data loaded successfully!")
-    print(f"Rows before transformation: {len(df)}")
-
-    # Transform
-    transformed_df = transform_data(df)
-
-    print("\nTransformation completed!")
-    print(f"Rows after transformation: {len(transformed_df)}")
-
-    print("\nTransformed data:")
-    print(transformed_df.head())
-
-    # Save transformed data
-    transformed_df.to_csv(PROCESSED_DATA_PATH, index=False)
-
-    print(f"\nTransformed data saved to: {PROCESSED_DATA_PATH}")
+    raw_data = pd.read_csv(RAW_DATA_PATH)
+    transformed_data = transform_data(raw_data)
+    save_transformed_data(transformed_data)
+    print(f"Transformed {len(transformed_data)} rows to {PROCESSED_DATA_PATH}")
 
 
 if __name__ == "__main__":

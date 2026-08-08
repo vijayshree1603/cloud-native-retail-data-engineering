@@ -1,20 +1,20 @@
+"""Shared UTF-8 file logger for the pipeline."""
+
 import logging
-import os
 
-
-LOG_DIRECTORY = "logs"
-LOG_FILE = os.path.join(LOG_DIRECTORY, "pipeline.log")
+from src.config import LOG_FILE
 
 
 def get_logger():
-    """Create and return the pipeline logger."""
+    """Return the configured pipeline logger without duplicating handlers."""
+    logger = logging.getLogger("retail_pipeline")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    if logger.handlers:
+        return logger
 
-    os.makedirs(LOG_DIRECTORY, exist_ok=True)
-
-    logging.basicConfig(
-        filename=LOG_FILE,
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s"
-    )
-
-    return logging.getLogger("retail_pipeline")
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+    handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s"))
+    logger.addHandler(handler)
+    return logger
