@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 REQUIRED_COLUMNS = [
     "order_id",
     "order_date",
@@ -31,14 +30,17 @@ def validate_data(df):
 
     if missing_columns:
         errors.append(f"Missing columns: {missing_columns}")
-    else:
-        print("✓ Required columns: PASS")
+        print(f"✗ Required columns: FAIL - {missing_columns}")
+        return False
+
+    print("✓ Required columns: PASS")
 
     # Check missing values
     missing_values = df[REQUIRED_COLUMNS].isnull().sum().sum()
 
     if missing_values > 0:
         errors.append(f"Missing values found: {missing_values}")
+        print(f"✗ Missing values: FAIL - {missing_values}")
     else:
         print("✓ Missing values: PASS")
 
@@ -46,7 +48,12 @@ def validate_data(df):
     duplicate_orders = df["order_id"].duplicated().sum()
 
     if duplicate_orders > 0:
-        errors.append(f"Duplicate order IDs found: {duplicate_orders}")
+        errors.append(
+            f"Duplicate order IDs found: {duplicate_orders}"
+        )
+        print(
+            f"✗ Duplicate order IDs: FAIL - {duplicate_orders}"
+        )
     else:
         print("✓ Duplicate order IDs: PASS")
 
@@ -54,7 +61,12 @@ def validate_data(df):
     invalid_quantity = (df["quantity"] <= 0).sum()
 
     if invalid_quantity > 0:
-        errors.append(f"Invalid quantities found: {invalid_quantity}")
+        errors.append(
+            f"Invalid quantities found: {invalid_quantity}"
+        )
+        print(
+            f"✗ Quantity values: FAIL - {invalid_quantity}"
+        )
     else:
         print("✓ Quantity values: PASS")
 
@@ -62,7 +74,12 @@ def validate_data(df):
     invalid_prices = (df["unit_price"] <= 0).sum()
 
     if invalid_prices > 0:
-        errors.append(f"Invalid unit prices found: {invalid_prices}")
+        errors.append(
+            f"Invalid unit prices found: {invalid_prices}"
+        )
+        print(
+            f"✗ Unit prices: FAIL - {invalid_prices}"
+        )
     else:
         print("✓ Unit prices: PASS")
 
@@ -73,7 +90,12 @@ def validate_data(df):
     ).isna().sum()
 
     if invalid_dates > 0:
-        errors.append(f"Invalid dates found: {invalid_dates}")
+        errors.append(
+            f"Invalid dates found: {invalid_dates}"
+        )
+        print(
+            f"✗ Order dates: FAIL - {invalid_dates}"
+        )
     else:
         print("✓ Order dates: PASS")
 
