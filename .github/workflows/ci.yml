@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  backend-and-etl:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,3 +26,26 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+      - run: npm test
+      - run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -f Dockerfile.backend -t retail-backend:ci .
+      - name: Build frontend image
+        run: docker build -f Dockerfile.frontend -t retail-frontend:ci .

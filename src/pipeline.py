@@ -5,6 +5,7 @@ import sys
 from src.data_quality import validate_data
 from src.extract import extract_data
 from src.load import load_data
+from src.config import DATABASE_URL
 from src.logger import get_logger
 from src.run_analytics import run_analytics
 from src.transform import save_transformed_data, transform_data
@@ -20,7 +21,7 @@ def main():
             raise ValueError("Data quality validation failed; pipeline stopped before transformation.")
         transformed_data = transform_data(raw_data)
         save_transformed_data(transformed_data)
-        load_data(transformed_data)
+        load_data(transformed_data, database_url=DATABASE_URL)
         run_analytics()
     except Exception as error:
         logger.exception("Pipeline failed: %s", error)

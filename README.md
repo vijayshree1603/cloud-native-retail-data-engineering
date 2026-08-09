@@ -1,103 +1,132 @@
 # Cloud-Native Retail Data Engineering
 
-A beginner-friendly retail ETL project that turns a CSV extract into validated, analytics-ready SQLite data. It is local by design: the same separation of extract, validate, transform, load, and analytics stages can later be adapted to cloud storage and a managed warehouse.
+A production-style retail analytics application that retains the original CSV ETL workflow and makes its loaded data available through a FastAPI service and React dashboard. It runs locally with SQLite for low-friction development and with PostgreSQL in Docker or production.
 
 ## Architecture
 
-```text
-data/raw/retail_sales.csv
-          |
-       extract
-          |
- data-quality validation
-          |
-      transform ------> data/processed/retail_sales_transformed.csv
-          |
-        load
-          |
- data/retail_sales.db (retail_sales table)
-          |
-      SQL analytics
+```mermaid
+flowchart LR
+  CSV["Raw retail CSV\n(local filesystem or S3-compatible storage)"] --> E[Extract]
+  E --> V[Validate]
+  V --> T[Transform]
+  T --> P["Processed CSV"]
+  T --> L[Load & verify]
+  L --> DB[("PostgreSQL\nor SQLite")]
+  DB --> A["FastAPI REST API"]
+  A --> UI["React + Vite dashboard"]
+  DB --> Q["SQL analytics"]
 ```
 
-The pipeline stops before transformation when validation fails. Repository paths are resolved relative to the source code, so `python -m src.pipeline` works from the repository root on Windows, macOS, and Linux.
+The ETL retains its extract → validate → transform → load → analytics sequence. It refuses invalid input before transformation, creates a calculated `total_amount`, writes a processed CSV, replaces and verifies the `retail_sales` table, then runs analytics. The dashboard and API read that same table.
 
-## Setup and installation
+## Quick start: complete stack with Docker
 
-Requires Python 3.12 or newer.
+Docker Desktop is required. The Compose `etl` service waits for PostgreSQL, loads the included sample data, and exits successfully before the backend starts.
 
 ```bash
-git clone https://github.com/vijayshree1603/cloud-native-retail-data-engineering.git
-cd cloud-native-retail-data-engineering
+docker compose up --build
+```
+
+Open [http://localhost:8080](http://localhost:8080) for the dashboard, [http://localhost:8000/docs](http://localhost:8000/docs) for interactive API documentation, and [http://localhost:8000/health](http://localhost:8000/health) for health status.
+
+Stop services with `docker compose down`. Use `docker compose down -v` only when intentionally deleting the local PostgreSQL volume.
+
+## Local development
+
+Requires Python 3.12+ and Node 22+.
+
+```bash
 python -m venv .venv
-```
-
-Activate the environment, then install dependencies:
-
-```bash
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-
-# macOS/Linux
-source .venv/bin/activate
-
-python -m pip install --upgrade pip
+# PowerShell: .\.venv\Scripts\Activate.ps1
+# macOS/Linux: source .venv/bin/activate
 python -m pip install -r requirements.txt
-```
-
-## Run the project
-
-Run the complete ETL flow from the repository root:
-
-```bash
 python -m src.pipeline
+uvicorn backend.app.main:app --reload
 ```
 
-This creates `data/processed/retail_sales_transformed.csv`, replaces the SQLite `retail_sales` table at `data/retail_sales.db`, verifies the table row count, and prints six analytics results. Generated outputs are intentionally ignored by Git.
-
-To run analytics after a successful load:
+The default `DATABASE_URL` is a SQLite file at `data/retail_sales.db`, preserving the original one-command local ETL behavior. In a second terminal:
 
 ```bash
-python -m src.run_analytics
+cd frontend
+npm install
+npm run dev
 ```
 
-## Data quality checks
+Visit [http://localhost:5173](http://localhost:5173). Copy `.env.example` to `.env` and set values for a PostgreSQL or cloud configuration; never commit `.env`.
 
-Before transformation, the pipeline requires `order_id`, `order_date`, `customer_id`, `product_id`, `category`, `quantity`, `unit_price`, `region`, and `payment_method`.
+## API
 
-It rejects missing values, duplicate order IDs, non-numeric or non-positive quantities and unit prices, and unparseable order dates. A failing check returns a non-zero process status and stops the workflow before any output is written.
+| Endpoint | Description |
+|---|---|
+| `GET /health` | Database-backed health check |
+| `GET /api/sales?limit=25&offset=0` | Paginated sales records |
+| `GET /api/analytics/total-revenue` | Total revenue |
+| `GET /api/analytics/total-quantity` | Total units sold |
+| `GET /api/analytics/average-order-value` | Average order value |
+| `GET /api/analytics/revenue-by-category` | Revenue aggregation by category |
+| `GET /api/analytics/revenue-by-region` | Revenue aggregation by region |
+| `GET /api/analytics/highest-value-orders?limit=5` | Highest-value orders |
 
-## SQLite and analytics
+Responses are typed with Pydantic, invalid pagination is rejected by FastAPI validation, and database failures return a `503` error rather than leaking connection details.
 
-`src.load` uses SQLAlchemy to create or replace `retail_sales` and verifies both table existence and loaded row count. `src.run_analytics` checks that the table exists before running SQL for total revenue, revenue by category and region, total quantity, average order value, and the five highest-value orders. The SQL is also available in `sql/analytics.sql`.
+## Database and configuration
 
-## Tests and CI
+`DATABASE_URL` accepts standard SQLAlchemy URLs. Examples:
 
-Run the test suite with:
+```dotenv
+# Local default (no setup required)
+DATABASE_URL=sqlite:///data/retail_sales.db
+
+# PostgreSQL / Docker
+DATABASE_URL=postgresql+psycopg://retail:retail@postgres:5432/retail
+```
+
+Production credentials belong in the deployment platform’s secret store, not source control. The included Compose credentials are local-development defaults only.
+
+## Object storage
+
+The extraction layer uses a small `ObjectStorage` abstraction.
+
+- `STORAGE_BACKEND=local` reads `RAW_DATA_KEY` beneath `LOCAL_STORAGE_PATH`.
+- `STORAGE_BACKEND=s3` downloads `S3_PREFIX/RAW_DATA_KEY` from `S3_BUCKET` using standard boto3 credential resolution.
+
+This supports AWS S3 and compatible providers without changing ETL code. The repository does not ship cloud credentials or claim an active cloud deployment.
+
+## Testing and builds
 
 ```bash
+# Python ETL, SQLite integration, and FastAPI tests
 python -m pytest -v
+
+# React behavior tests and production bundle
+cd frontend
+npm test
+npm run build
+
+# Images
+docker build -f Dockerfile.backend -t retail-backend .
+docker build -f Dockerfile.frontend -t retail-frontend .
 ```
 
-The tests cover transformations, data-quality rejection, pipeline fail-fast behavior, and a temporary SQLite load-plus-analytics integration flow. GitHub Actions runs the same command on Ubuntu with Python 3.12 for pushes and pull requests targeting `main`.
+GitHub Actions runs the Python suite, frontend test/build, and both Docker builds on pushes and pull requests to `main`; any failure fails its job.
 
-## Project structure
+## Deployment guidance
+
+For AWS, run the backend and ETL job on ECS/Fargate (or Kubernetes), use RDS PostgreSQL for `DATABASE_URL`, store raw files in S3, and host the built frontend on S3 + CloudFront or a container service. Supply database URL, bucket, region/role credentials, and `CORS_ORIGINS` as environment configuration. Run the ETL as a scheduled job or an intentionally triggered task; it replaces the analytics table after validating and transforming the raw file.
+
+The same pattern maps to Cloud Run + Cloud SQL + GCS-compatible storage, Azure Container Apps + PostgreSQL, or Kubernetes. Configure networking so only the API can reach the database and expose only the frontend/API ingress endpoints.
+
+## Project layout
 
 ```text
-.github/workflows/ci.yml       GitHub Actions test workflow
-data/raw/                      Versioned sample input
-sql/analytics.sql              Reference analytics SQL
-src/config.py                  Repository-relative paths
-src/extract.py                 CSV extraction
-src/data_quality.py            Validation rules
-src/transform.py               Transform and processed CSV output
-src/load.py                    SQLite load and verification
-src/run_analytics.py           Analytics execution
-src/pipeline.py                End-to-end orchestration
-src/logger.py                  Shared UTF-8 file logging
-tests/                         Unit and integration tests
+backend/app/              FastAPI application and response schemas
+frontend/                 Vite React dashboard and UI test
+src/                      ETL, SQLAlchemy database helpers, storage abstraction
+tests/                    Original ETL tests plus API integration test
+data/raw/                 Versioned sample input
+docker-compose.yml        PostgreSQL + ETL + API + dashboard stack
+Dockerfile.backend        API/ETL image
+Dockerfile.frontend       Dashboard image
 ```
 
-## Docker
-
-Docker is intentionally not included. The project has no service dependencies, uses a small local CSV and SQLite database, and runs with a single Python command; a container would add setup without improving the workflow. It becomes appropriate when deploying a scheduled job or standardizing execution across a larger team.
+The dashboard itself is the live visual representation of the implemented application. Add deployment-specific screenshots here after running the stack in the target environment.

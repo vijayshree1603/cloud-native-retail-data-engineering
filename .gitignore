@@ -30,3 +30,14 @@ data/processed/
 # OS files
 .DS_Store
 Thumbs.db
+__pycache__/
+*.py[cod]
+.env
+.venv/
+.pytest_cache/
+.test-tmp/
+data/processed/
+data/*.db
+logs/*.log
+frontend/node_modules/
+frontend/dist/

@@ -3,12 +3,13 @@
 import pandas as pd
 
 from src.config import RAW_DATA_PATH
+from src.storage import get_raw_data_path
 from src.logger import get_logger
 
 
-def extract_data(path=RAW_DATA_PATH):
+def extract_data(path=None):
     """Read and return retail sales data from a CSV file."""
-    path = str(path)
+    path = str(get_raw_data_path() if path is None else path)
     try:
         dataframe = pd.read_csv(path)
     except (FileNotFoundError, pd.errors.ParserError, UnicodeDecodeError) as error:
